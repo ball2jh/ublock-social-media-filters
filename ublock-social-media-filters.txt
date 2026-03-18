@@ -106,8 +106,8 @@ www.youtube.com##yt-chip-cloud-chip-renderer:has(yt-formatted-string:has-text(/^
 
 ! --- Block live stream watch pages ---
 ! Hide page content when the player has a live badge
-www.youtube.com##ytd-watch-flexy:has(.ytp-live-badge) #primary
-www.youtube.com##ytd-watch-flexy:has(.ytp-live-badge) #secondary
+www.youtube.com##ytd-watch-flexy:has(.html5-video-player.ytp-live) #primary
+www.youtube.com##ytd-watch-flexy:has(.html5-video-player.ytp-live) #secondary
 
 ! --- Hide subscriptions section in left sidebar ---
 ! Full sidebar (browse pages): hide the entire section containing the subscriptions link
