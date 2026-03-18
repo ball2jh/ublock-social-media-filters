@@ -1,7 +1,7 @@
 ! Title: Social Media Blocker
-! Description: Blocks distracting social media. Selective blocking for YouTube (no feeds/shorts/recommendations) and Reddit (cosmetic feed hiding on homepage/popular/all).
-! Version: 2026.3.18.6
-! Last modified: 2026-03-17
+! Description: Blocks distracting social media (including Twitch). Selective blocking for YouTube (no feeds/shorts/recommendations) and Reddit (cosmetic feed hiding on homepage/popular/all).
+! Version: 2026.3.18.7
+! Last modified: 2026-03-18
 ! Expires: 2 weeks (update frequency)
 ! Homepage: https://github.com/ball2jh/ublock-social-media-filters
 ! License: https://github.com/ball2jh/ublock-social-media-filters/blob/main/LICENSE
@@ -43,6 +43,11 @@
 
 ! Tumblr
 ||tumblr.com^
+
+! Twitch
+||twitch.tv^
+||twitchcdn.net^
+||jtvnw.net^
 
 ! ============================================
 ! SECTION 2: YouTube — Selective Blocking
