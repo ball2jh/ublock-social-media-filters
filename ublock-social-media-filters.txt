@@ -1,0 +1,142 @@
+! ============================================
+! SECTION 1: Full Domain Blocks
+! ============================================
+
+! Instagram
+||instagram.com^
+||cdninstagram.com^
+
+! TikTok
+||tiktok.com^
+||tiktokcdn.com^
+
+! Facebook
+||facebook.com^
+||fbcdn.net^
+||fb.com^
+||fb.watch^
+
+! Twitter / X
+||twitter.com^
+||x.com^
+||t.co^
+||twimg.com^
+
+! Snapchat
+||snapchat.com^
+||snap.com^
+
+! Pinterest
+||pinterest.com^
+||pinimg.com^
+
+! Threads
+||threads.net^
+
+! Tumblr
+||tumblr.com^
+
+! ============================================
+! SECTION 2: YouTube — Selective Blocking
+! ============================================
+
+! --- Block homepage feed content ---
+! Hides the entire homepage browse content (search bar remains functional)
+www.youtube.com##ytd-browse[page-subtype="home"]
+
+! --- Block Shorts (page navigation) ---
+! Blocks navigating to any /shorts/ URL entirely (uBlock strict blocking page)
+||youtube.com/shorts$document
+
+! --- Block Shorts (cosmetic - hide from all feeds and UI) ---
+! Source: github.com/gijsdev/ublock-hide-yt-shorts (maintained, v2025.8.31)
+
+! Remove empty spaces in grid after hiding shorts
+www.youtube.com##ytd-rich-grid-row,#contents.ytd-rich-grid-row:style(display: contents !important)
+
+! Hide videos with #shorts in title
+www.youtube.com##ytd-grid-video-renderer:has(#video-title:has-text(/(^| )#Shorts?( |$)/i))
+www.youtube.com##ytd-rich-item-renderer:has(#video-title:has-text(/(^| )#Shorts?( |$)/i))
+
+! Hide videos with shorts overlay indicator on thumbnail
+www.youtube.com##ytd-grid-video-renderer:has([overlay-style="SHORTS"])
+www.youtube.com##ytd-rich-item-renderer:has([overlay-style="SHORTS"])
+www.youtube.com##ytd-video-renderer:has([overlay-style="SHORTS"])
+www.youtube.com##ytd-item-section-renderer.ytd-section-list-renderer[page-subtype="subscriptions"]:has(ytd-video-renderer:has([overlay-style="SHORTS"]))
+
+! Hide Shorts button in sidebar navigation
+www.youtube.com##ytd-guide-entry-renderer:has(yt-formatted-string:has-text(/^Shorts$/i))
+www.youtube.com##ytd-mini-guide-entry-renderer:has(.title:has-text(/^Shorts$/i))
+
+! Hide Shorts sections/shelves (except on history page)
+www.youtube.com##:matches-path(/^(?!\/feed\/history).*$/)ytd-rich-section-renderer:has(#title:has-text(/(^| )Shorts( |$)/i))
+www.youtube.com##:matches-path(/^(?!\/feed\/history).*$/)ytd-reel-shelf-renderer:has(.ytd-reel-shelf-renderer:has-text(/(^| )Shorts( |$)/i))
+
+! Hide Shorts tab on channel pages
+www.youtube.com##tp-yt-paper-tab:has(.tp-yt-paper-tab:has-text(Shorts))
+www.youtube.com##yt-tab-shape:has-text(/^Shorts$/)
+
+! Hide Shorts remixes in video descriptions
+www.youtube.com##ytd-reel-shelf-renderer:has(#title:has-text(/(^| )Shorts.?Remix.*$/i))
+
+! Hide Shorts chip/category on homepage and search
+www.youtube.com##yt-chip-cloud-chip-renderer:has(yt-formatted-string:has-text(/^Shorts$/i))
+
+! Hide Shorts sections on search page
+www.youtube.com##.shelf-header-layout-wiz__title:has-text(/(^| )Shorts( |$)/i):upward(grid-shelf-view-model)
+www.youtube.com##.yt-shelf-header-layout__title:has-text(/(^| )Shorts( |$)/i):upward(grid-shelf-view-model)
+
+! --- Block recommendations sidebar on video watch pages ---
+! Source: gist.github.com/Robleh/583165b8e3da40ad0f04154aefa75cb2
+www.youtube.com##ytd-watch-next-secondary-results-renderer.ytd-watch-flexy.style-scope
+
+! --- Block end-screen video suggestions ---
+www.youtube.com##.ytp-ce-element
+www.youtube.com##.ytp-endscreen-content
+
+! ============================================
+! SECTION 3: Reddit — Selective Blocking
+! ============================================
+
+! --- Block Reddit homepage and algorithmic feeds ---
+! Block all reddit pages at document level, then whitelist specific paths
+||reddit.com^$document
+
+! Allow subreddit pages (but re-block aggregated feeds that start with /r/)
+@@||reddit.com/r/$document
+||reddit.com/r/popular$document,important
+||reddit.com/r/all$document,important
+
+! Allow user profile pages
+@@||reddit.com/u/$document
+@@||reddit.com/user/$document
+
+! Allow direct comment/post links
+@@||reddit.com/comments/$document
+
+! Allow search
+@@||reddit.com/search$document
+
+! Allow account/settings pages
+@@||reddit.com/settings$document
+@@||reddit.com/login$document
+@@||reddit.com/register$document
+@@||reddit.com/account$document
+@@||reddit.com/premium$document
+
+! Allow messaging
+@@||reddit.com/message/$document
+
+! Allow wiki pages
+@@||reddit.com/wiki$document
+
+! Allow media/gallery
+@@||reddit.com/gallery/$document
+@@||reddit.com/media$document
+
+! Allow reddit help/policies
+@@||reddit.com/help$document
+@@||reddit.com/policies$document
+
+! Allow reddit API/resources (images, CSS, JS load normally since only $document is blocked)
+! Note: $document only blocks main frame navigation, not subresources
