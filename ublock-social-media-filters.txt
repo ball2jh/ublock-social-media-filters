@@ -1,6 +1,6 @@
 ! Title: Social Media Blocker
 ! Description: Blocks distracting social media. Selective blocking for YouTube (no feeds/shorts/recommendations) and Reddit (no homepage/popular/all).
-! Version: 2026.3.17.2
+! Version: 2026.3.17.3
 ! Last modified: 2026-03-17
 ! Expires: 2 weeks (update frequency)
 ! Homepage: https://github.com/ball2jh/ublock-social-media-filters
@@ -107,7 +107,7 @@ www.youtube.com##yt-chip-cloud-chip-renderer:has(yt-formatted-string:has-text(/^
 ||youtube.com/live$document
 
 ! --- Hide subscriptions section in left sidebar ---
-www.youtube.com##ytd-guide-section-renderer:has(#guide-section-title:has-text(/^Subscriptions$/i))
+www.youtube.com##ytd-guide-section-renderer:has(h3:has-text(/^Subscriptions$/i))
 
 ! --- Block recommendations sidebar on video watch pages ---
 ! Source: gist.github.com/Robleh/583165b8e3da40ad0f04154aefa75cb2
