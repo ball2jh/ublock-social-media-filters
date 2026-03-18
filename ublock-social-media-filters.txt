@@ -1,6 +1,6 @@
 ! Title: Social Media Blocker
 ! Description: Blocks distracting social media. Selective blocking for YouTube (no feeds/shorts/recommendations) and Reddit (cosmetic feed hiding on homepage/popular/all).
-! Version: 2026.3.18.4
+! Version: 2026.3.18.5
 ! Last modified: 2026-03-17
 ! Expires: 2 weeks (update frequency)
 ! Homepage: https://github.com/ball2jh/ublock-social-media-filters
@@ -128,20 +128,14 @@ www.youtube.com##.ytp-endscreen-content
 ! ============================================
 ! Strategy: Let all pages load, surgically hide distracting content.
 ! Uses shreddit-app[pagetype] to scope selectors (Reddit's Lit web components).
-! Page types: home (homepage), popular (/r/popular), all (/r/all),
-!             community (subreddits), post_detail (comment pages)
+! Feeds hidden on all pages EXCEPT: community (subreddits), post_detail (posts)
+! This catches home, news, popular, all, and any future feed types
 
-! --- Hide homepage feed (keep search bar, nav, left sidebar) ---
-www.reddit.com##shreddit-app[pagetype="home"] shreddit-feed
-www.reddit.com##shreddit-app[pagetype="home"] shreddit-sort-dropdown
-
-! --- Hide /r/popular feed ---
-www.reddit.com##shreddit-app[pagetype="popular"] shreddit-feed
-www.reddit.com##shreddit-app[pagetype="popular"] shreddit-sort-dropdown
-
-! --- Hide /r/all feed ---
-www.reddit.com##shreddit-app[pagetype="all"] shreddit-feed
-www.reddit.com##shreddit-app[pagetype="all"] shreddit-sort-dropdown
+! --- Hide feeds on all pages EXCEPT subreddits and post pages ---
+! Uses :not() to preserve feeds only where they belong (community pages, post detail)
+www.reddit.com##shreddit-app:not([pagetype="community"]):not([pagetype="post_detail"]) shreddit-feed
+www.reddit.com##shreddit-app:not([pagetype="community"]):not([pagetype="post_detail"]) shreddit-sort-dropdown
+www.reddit.com##shreddit-app:not([pagetype="community"]):not([pagetype="post_detail"]) shreddit-title
 
 ! --- Hide trending news carousel (appears above feeds) ---
 www.reddit.com##shreddit-gallery-carousel
