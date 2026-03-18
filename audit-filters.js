@@ -110,6 +110,9 @@ const REDDIT_PAGES = [
       'shreddit-feed',
       'shreddit-post',
       'reddit-header-large',
+      'recent-posts',
+      'reddit-recent-pages',
+      'faceplate-tracker[noun="games_drawer"]',
     ],
   },
   {
