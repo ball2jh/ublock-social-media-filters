@@ -116,9 +116,9 @@ www.youtube.com##ytd-guide-section-renderer:has(a[href="/feed/subscriptions"])
 www.youtube.com##ytd-guide-collapsible-section-entry-renderer:has(a[href="/feed/subscriptions"])
 
 ! --- Block recommendations sidebar on video watch pages ---
-! Source: gist.github.com/Robleh/583165b8e3da40ad0f04154aefa75cb2
-www.youtube.com##ytd-watch-next-secondary-results-renderer.ytd-watch-flexy.style-scope
-! Expand primary content to fill space left by hidden sidebar
+! Hide the entire secondary column (not just its content) so primary expands
+www.youtube.com##ytd-watch-flexy #secondary
+! Remove max-width constraint so primary fills the freed space
 www.youtube.com##ytd-watch-flexy #primary:style(max-width: none !important;)
 
 ! --- Block end-screen video suggestions ---
