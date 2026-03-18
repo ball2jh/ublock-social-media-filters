@@ -1,6 +1,6 @@
 ! Title: Social Media Blocker
 ! Description: Blocks distracting social media. Selective blocking for YouTube (no feeds/shorts/recommendations) and Reddit (cosmetic feed hiding on homepage/popular/all).
-! Version: 2026.3.18.3
+! Version: 2026.3.18.4
 ! Last modified: 2026-03-17
 ! Expires: 2 weeks (update frequency)
 ! Homepage: https://github.com/ball2jh/ublock-social-media-filters
@@ -142,6 +142,9 @@ www.reddit.com##shreddit-app[pagetype="popular"] shreddit-sort-dropdown
 ! --- Hide /r/all feed ---
 www.reddit.com##shreddit-app[pagetype="all"] shreddit-feed
 www.reddit.com##shreddit-app[pagetype="all"] shreddit-sort-dropdown
+
+! --- Hide trending news carousel (appears above feeds) ---
+www.reddit.com##shreddit-gallery-carousel
 
 ! --- Hide right sidebar "Recent Posts" widget ---
 www.reddit.com##recent-posts
