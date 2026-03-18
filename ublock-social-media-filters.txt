@@ -1,3 +1,11 @@
+! Title: Social Media Blocker
+! Description: Blocks distracting social media. Selective blocking for YouTube (no feeds/shorts/recommendations) and Reddit (no homepage/popular/all).
+! Version: 2026.3.17
+! Last modified: 2026-03-17
+! Expires: 2 weeks (update frequency)
+! Homepage: https://github.com/ball2jh/ublock-social-media-filters
+! License: https://github.com/ball2jh/ublock-social-media-filters/blob/main/LICENSE
+
 ! ============================================
 ! SECTION 1: Full Domain Blocks
 ! ============================================
