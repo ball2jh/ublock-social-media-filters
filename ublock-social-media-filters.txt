@@ -118,8 +118,11 @@ www.youtube.com##ytd-guide-collapsible-section-entry-renderer:has(a[href="/feed/
 ! --- Block recommendations sidebar on video watch pages ---
 ! Hide the entire secondary column (not just its content) so primary expands
 www.youtube.com##ytd-watch-flexy #secondary
-! Remove max-width constraint so primary fills the freed space
+! Remove max-width constraints so primary and player fill the freed space
 www.youtube.com##ytd-watch-flexy #primary:style(max-width: none !important;)
+www.youtube.com###player-container-outer:style(max-width: none !important;)
+! Fix control bar width (YT JS sets a fixed inline width that doesn't adapt)
+www.youtube.com##.ytp-chrome-bottom:style(width: calc(100% - 24px) !important;)
 
 ! --- Block end-screen video suggestions ---
 www.youtube.com##.ytp-ce-element
