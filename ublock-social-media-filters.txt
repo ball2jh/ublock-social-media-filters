@@ -1,6 +1,6 @@
 ! Title: Social Media Blocker
 ! Description: Blocks distracting social media. Selective blocking for YouTube (no feeds/shorts/recommendations) and Reddit (no homepage/popular/all).
-! Version: 2026.3.17
+! Version: 2026.3.17.2
 ! Last modified: 2026-03-17
 ! Expires: 2 weeks (update frequency)
 ! Homepage: https://github.com/ball2jh/ublock-social-media-filters
@@ -93,6 +93,21 @@ www.youtube.com##yt-chip-cloud-chip-renderer:has(yt-formatted-string:has-text(/^
 ! Hide Shorts sections on search page
 www.youtube.com##.shelf-header-layout-wiz__title:has-text(/(^| )Shorts( |$)/i):upward(grid-shelf-view-model)
 www.youtube.com##.yt-shelf-header-layout__title:has-text(/(^| )Shorts( |$)/i):upward(grid-shelf-view-model)
+
+! --- Block live streams from feeds and search ---
+! Hide videos with LIVE badge overlay on thumbnail
+www.youtube.com##ytd-rich-item-renderer:has([overlay-style="LIVE"])
+www.youtube.com##ytd-grid-video-renderer:has([overlay-style="LIVE"])
+www.youtube.com##ytd-video-renderer:has([overlay-style="LIVE"])
+
+! Hide "Live" chip/category on homepage and search
+www.youtube.com##yt-chip-cloud-chip-renderer:has(yt-formatted-string:has-text(/^Live$/i))
+
+! Block navigating to /live/ URLs
+||youtube.com/live$document
+
+! --- Hide subscriptions section in left sidebar ---
+www.youtube.com##ytd-guide-section-renderer:has(#guide-section-title:has-text(/^Subscriptions$/i))
 
 ! --- Block recommendations sidebar on video watch pages ---
 ! Source: gist.github.com/Robleh/583165b8e3da40ad0f04154aefa75cb2
