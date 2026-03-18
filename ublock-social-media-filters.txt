@@ -1,6 +1,6 @@
 ! Title: Social Media Blocker
 ! Description: Blocks distracting social media. Selective blocking for YouTube (no feeds/shorts/recommendations) and Reddit (no homepage/popular/all).
-! Version: 2026.3.17.4
+! Version: 2026.3.17.5
 ! Last modified: 2026-03-17
 ! Expires: 2 weeks (update frequency)
 ! Homepage: https://github.com/ball2jh/ublock-social-media-filters
@@ -95,16 +95,25 @@ www.youtube.com##.shelf-header-layout-wiz__title:has-text(/(^| )Shorts( |$)/i):u
 www.youtube.com##.yt-shelf-header-layout__title:has-text(/(^| )Shorts( |$)/i):upward(grid-shelf-view-model)
 
 ! --- Block live streams from feeds and search ---
-! Hide videos with LIVE badge overlay on thumbnail
-www.youtube.com##ytd-rich-item-renderer:has([overlay-style="LIVE"])
-www.youtube.com##ytd-grid-video-renderer:has([overlay-style="LIVE"])
-www.youtube.com##ytd-video-renderer:has([overlay-style="LIVE"])
+! Hide videos with is-live-video attribute on thumbnail
+www.youtube.com##ytd-rich-item-renderer:has(ytd-thumbnail[is-live-video])
+www.youtube.com##ytd-video-renderer:has(ytd-thumbnail[is-live-video])
+www.youtube.com##ytd-grid-video-renderer:has(ytd-thumbnail[is-live-video])
+
+! Hide videos with LIVE badge
+www.youtube.com##ytd-video-renderer:has(badge-shape.yt-badge-shape--live)
+www.youtube.com##ytd-rich-item-renderer:has(badge-shape.yt-badge-shape--live)
 
 ! Hide "Live" chip/category on homepage and search
 www.youtube.com##yt-chip-cloud-chip-renderer:has(yt-formatted-string:has-text(/^Live$/i))
 
 ! Block navigating to /live/ URLs
 ||youtube.com/live$document
+
+! --- Block live stream watch pages ---
+! Hide page content when the player has a live badge
+www.youtube.com##ytd-watch-flexy:has(.ytp-live-badge) #primary
+www.youtube.com##ytd-watch-flexy:has(.ytp-live-badge) #secondary
 
 ! --- Hide subscriptions section in left sidebar ---
 www.youtube.com##ytd-guide-section-renderer:has(a[href="/feed/subscriptions"])
