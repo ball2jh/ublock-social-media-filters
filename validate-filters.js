@@ -177,13 +177,14 @@ console.log('    [ ] youtube.com live      → live streams hidden from feeds');
 console.log('    [ ] youtube.com live      → live stream watch page content hidden');
 console.log('');
 
-console.log('  Reddit selective (expect strict blocking page or allowed):');
-console.log('    [ ] reddit.com            → BLOCKED');
-console.log('    [ ] reddit.com/r/popular  → BLOCKED');
-console.log('    [ ] reddit.com/r/all      → BLOCKED');
-console.log('    [ ] reddit.com/r/linux    → ALLOWED');
-console.log('    [ ] reddit.com/search?q=* → ALLOWED');
-console.log('    [ ] reddit.com/settings   → ALLOWED');
+console.log('  Reddit cosmetic (all pages load, feeds hidden on specific pages):');
+console.log('    [ ] reddit.com            → page loads, feed hidden');
+console.log('    [ ] reddit.com/r/popular  → page loads, feed hidden');
+console.log('    [ ] reddit.com/r/all      → page loads, feed hidden');
+console.log('    [ ] reddit.com/r/linux    → page loads, feed VISIBLE');
+console.log('    [ ] reddit.com/search?q=* → page loads normally');
+console.log('    [ ] reddit.com/settings   → page loads normally');
+console.log('    [ ] reddit.com ads        → shreddit-ad-post hidden, sidebar ads hidden');
 console.log('');
 
 process.exit(errors > 0 ? 1 : 0);

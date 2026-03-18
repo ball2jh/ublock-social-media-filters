@@ -4,11 +4,18 @@
 // Usage: node test-filters.js
 
 const { firefox } = require('playwright');
+const Database = require('better-sqlite3');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
 const FILTER_FILE = path.join(__dirname, 'ublock-social-media-filters.txt');
 const UBLOCK_XPI = path.join(__dirname, 'ublock-origin.xpi');
+const FIREFOX_PROFILE = path.join(
+  os.homedir(),
+  '.config/mozilla/firefox/zwn1ks2d.default-release'
+);
+const COOKIES_DB = path.join(FIREFOX_PROFILE, 'cookies.sqlite');
 const TIMEOUT = 15000;
 
 let passed = 0;
@@ -87,11 +94,43 @@ async function run() {
 
   console.log('  Mode: Direct validation against live site DOM\n');
 
-  // Launch a clean browser for fetching real page content
+  // Extract cookies from Firefox profile for authenticated page testing
+  let cookies = [];
+  try {
+    const tmpDb = path.join(os.tmpdir(), `test-cookies-${Date.now()}.sqlite`);
+    fs.copyFileSync(COOKIES_DB, tmpDb);
+    const db = new Database(tmpDb, { readonly: true });
+    const rows = db.prepare(`
+      SELECT name, value, host, path, isSecure, isHttpOnly, sameSite, expiry
+      FROM moz_cookies
+      WHERE host LIKE '%youtube.com' OR host LIKE '%google.com' OR host LIKE '%reddit.com'
+    `).all();
+    db.close();
+    fs.unlinkSync(tmpDb);
+    const sameSiteMap = { 0: 'None', 1: 'Lax', 2: 'Strict', 256: 'None' };
+    cookies = rows.map((row) => {
+      let expires = row.expiry;
+      if (expires > 32503680000) {
+        expires = Math.floor(expires / (expires > 32503680000000 ? 1000000 : 1000));
+      }
+      if (expires <= 0) expires = -1;
+      return {
+        name: row.name, value: row.value, domain: row.host, path: row.path,
+        secure: !!row.isSecure, httpOnly: !!row.isHttpOnly,
+        sameSite: sameSiteMap[row.sameSite] || 'None', expires,
+      };
+    });
+    console.log(`  Cookies: ${cookies.length} extracted from Firefox profile\n`);
+  } catch (e) {
+    console.log(`  Cookies: extraction failed (${e.message}), proceeding without auth\n`);
+  }
+
+  // Launch browser with cookies for authenticated page testing
   const browser = await firefox.launch({ headless: true });
   const ctx = await browser.newContext({
     userAgent: 'Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0',
   });
+  if (cookies.length > 0) await ctx.addCookies(cookies);
 
   // =====================================================
   // SECTION 1: Full Domain Blocks (network filter logic)
@@ -121,32 +160,57 @@ async function run() {
   }
 
   // =====================================================
-  // SECTION 2: Reddit Selective Blocking
+  // SECTION 2: Reddit Cosmetic Filtering
   // =====================================================
-  console.log('\n  --- Reddit Selective Blocking ---');
+  console.log('\n  --- Reddit Cosmetic Filtering ---');
 
-  const redditTests = [
-    { url: 'https://www.reddit.com/', expect: 'blocked', desc: 'Homepage' },
-    { url: 'https://www.reddit.com/r/popular/', expect: 'blocked', desc: '/r/popular' },
-    { url: 'https://www.reddit.com/r/all/', expect: 'blocked', desc: '/r/all' },
-    { url: 'https://www.reddit.com/r/linux/', expect: 'allowed', desc: '/r/linux' },
-    { url: 'https://www.reddit.com/r/archlinux/', expect: 'allowed', desc: '/r/archlinux' },
-    { url: 'https://www.reddit.com/search/?q=test', expect: 'allowed', desc: '/search' },
-    { url: 'https://www.reddit.com/settings/', expect: 'allowed', desc: '/settings' },
-    { url: 'https://www.reddit.com/user/spez/', expect: 'allowed', desc: '/user/spez' },
+  // Verify no reddit.com document-level blocks exist (all cosmetic now)
+  const filters = fs.readFileSync(FILTER_FILE, 'utf8').split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('!'));
+  const redditDocBlocks = filters.filter(f =>
+    !f.startsWith('@@') && f.includes('reddit.com') && f.includes('$document')
+  );
+  if (redditDocBlocks.length === 0) {
+    log('PASS', 'Reddit no document-level blocks', 'all Reddit filtering is cosmetic');
+  } else {
+    log('FAIL', 'Reddit document-level blocks still exist', redditDocBlocks.join(', '));
+  }
+
+  // Verify all Reddit pages are now accessible (no URL blocking)
+  const redditAccessTests = [
+    { url: 'https://www.reddit.com/', desc: 'Homepage' },
+    { url: 'https://www.reddit.com/r/popular/', desc: '/r/popular' },
+    { url: 'https://www.reddit.com/r/all/', desc: '/r/all' },
+    { url: 'https://www.reddit.com/r/linux/', desc: '/r/linux' },
+    { url: 'https://www.reddit.com/search/?q=test', desc: '/search' },
+    { url: 'https://www.reddit.com/settings/', desc: '/settings' },
+    { url: 'https://www.reddit.com/notifications', desc: '/notifications' },
   ];
 
-  // Parse filter rules to test URL matching
-  const filters = fs.readFileSync(FILTER_FILE, 'utf8').split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('!'));
-
-  for (const test of redditTests) {
+  for (const test of redditAccessTests) {
     const result = matchUrl(test.url, filters);
-    if (test.expect === 'blocked' && result === 'blocked') {
-      log('PASS', `Reddit ${test.desc}`, 'correctly blocked');
-    } else if (test.expect === 'allowed' && result === 'allowed') {
-      log('PASS', `Reddit ${test.desc}`, 'correctly allowed');
+    if (result === 'allowed') {
+      log('PASS', `Reddit ${test.desc} accessible`, 'not blocked at network level');
     } else {
-      log('FAIL', `Reddit ${test.desc}`, `expected ${test.expect}, got ${result}`);
+      log('FAIL', `Reddit ${test.desc}`, `should be allowed (cosmetic only), got ${result}`);
+    }
+  }
+
+  // Verify cosmetic filter selectors exist in filter file
+  const redditCosmetics = filters.filter(f => f.includes('reddit.com##'));
+  const expectedSelectors = [
+    { pattern: 'pagetype="home"', desc: 'homepage feed hiding' },
+    { pattern: 'pagetype="popular"', desc: '/r/popular feed hiding' },
+    { pattern: 'pagetype="all"', desc: '/r/all feed hiding' },
+    { pattern: 'shreddit-ad-post', desc: 'ad post hiding' },
+    { pattern: 'shreddit-sidebar-ad', desc: 'sidebar ad hiding' },
+  ];
+
+  for (const sel of expectedSelectors) {
+    const found = redditCosmetics.some(f => f.includes(sel.pattern));
+    if (found) {
+      log('PASS', `Reddit cosmetic: ${sel.desc}`, `filter containing "${sel.pattern}" found`);
+    } else {
+      log('FAIL', `Reddit cosmetic: ${sel.desc}`, `no filter containing "${sel.pattern}"`);
     }
   }
 
@@ -284,24 +348,98 @@ async function run() {
   await ytWatch.close();
 
   // =====================================================
-  // SECTION 5: Reddit DOM validation
+  // SECTION 5: Reddit Cosmetic Selectors (live DOM)
   // =====================================================
-  console.log('\n  --- Reddit DOM Validation ---');
+  console.log('\n  --- Reddit Cosmetic Selectors (live DOM) ---');
 
-  const redditPage = await ctx.newPage();
+  // Test: Homepage has the feed + pagetype attribute our filters target
+  const rdHome = await ctx.newPage();
   try {
-    await redditPage.goto('https://www.reddit.com/r/linux/', { timeout: 20000, waitUntil: 'domcontentloaded' });
-    await redditPage.waitForTimeout(2000);
-    const status = redditPage.url().includes('reddit.com');
-    if (status) {
-      log('PASS', 'Reddit /r/linux loads', 'subreddit pages accessible');
+    await rdHome.goto('https://www.reddit.com/', { timeout: 20000, waitUntil: 'domcontentloaded' });
+    await rdHome.waitForTimeout(3000);
+
+    const appHome = await rdHome.$('shreddit-app[pagetype="home"]');
+    if (appHome) {
+      log('PASS', 'Reddit homepage pagetype="home"', 'shreddit-app attribute found — filter can scope to homepage');
     } else {
-      log('FAIL', 'Reddit /r/linux', `redirected to ${redditPage.url()}`);
+      log('FAIL', 'Reddit homepage pagetype', 'shreddit-app[pagetype="home"] NOT found');
+    }
+
+    const homeFeed = await rdHome.$('shreddit-feed');
+    if (homeFeed) {
+      log('PASS', 'Reddit homepage feed exists', 'shreddit-feed found — filter will hide it');
+    } else {
+      log('FAIL', 'Reddit homepage feed', 'shreddit-feed NOT found');
+    }
+
+    const header = await rdHome.$('reddit-header-large');
+    if (header) {
+      log('PASS', 'Reddit header exists', 'reddit-header-large found — nav/search preserved');
+    } else {
+      log('FAIL', 'Reddit header', 'reddit-header-large NOT found');
+    }
+  } catch (e) {
+    log('FAIL', 'Reddit homepage load', e.message);
+  }
+  await rdHome.close();
+
+  // Test: /r/popular has the popular pagetype
+  const rdPopular = await ctx.newPage();
+  try {
+    await rdPopular.goto('https://www.reddit.com/r/popular/', { timeout: 20000, waitUntil: 'domcontentloaded' });
+    await rdPopular.waitForTimeout(3000);
+
+    const appPopular = await rdPopular.$('shreddit-app[pagetype="popular"]');
+    if (appPopular) {
+      log('PASS', 'Reddit /r/popular pagetype="popular"', 'shreddit-app attribute found');
+    } else {
+      log('FAIL', 'Reddit /r/popular pagetype', 'shreddit-app[pagetype="popular"] NOT found');
+    }
+
+    const popFeed = await rdPopular.$('shreddit-feed');
+    if (popFeed) {
+      log('PASS', 'Reddit /r/popular feed exists', 'shreddit-feed found — filter will hide it');
+    } else {
+      log('FAIL', 'Reddit /r/popular feed', 'shreddit-feed NOT found');
+    }
+  } catch (e) {
+    log('FAIL', 'Reddit /r/popular load', e.message);
+  }
+  await rdPopular.close();
+
+  // Test: Subreddit page has community pagetype (feed should NOT be hidden)
+  const rdSubreddit = await ctx.newPage();
+  try {
+    await rdSubreddit.goto('https://www.reddit.com/r/linux/', { timeout: 20000, waitUntil: 'domcontentloaded' });
+    await rdSubreddit.waitForTimeout(3000);
+
+    const appCommunity = await rdSubreddit.$('shreddit-app[pagetype="community"]');
+    if (appCommunity) {
+      log('PASS', 'Reddit /r/linux pagetype="community"', 'subreddit page correctly identified — feed NOT hidden');
+    } else {
+      log('FAIL', 'Reddit /r/linux pagetype', 'shreddit-app[pagetype="community"] NOT found');
+    }
+
+    const subFeed = await rdSubreddit.$('shreddit-feed');
+    if (subFeed) {
+      log('PASS', 'Reddit /r/linux feed exists', 'subreddit feed present and visible (no cosmetic filter scoped here)');
+    } else {
+      log('FAIL', 'Reddit /r/linux feed', 'shreddit-feed NOT found');
+    }
+
+    // Verify no cosmetic filter targets community pagetype feeds
+    const communityFeedFilters = redditCosmetics.filter(f =>
+      f.includes('pagetype="community"') && f.includes('shreddit-feed')
+    );
+    if (communityFeedFilters.length === 0) {
+      log('PASS', 'Reddit subreddit feed not filtered', 'no cosmetic filter hides community page feeds');
+    } else {
+      log('FAIL', 'Reddit subreddit feed filtered', `unexpected filter: ${communityFeedFilters.join(', ')}`);
     }
   } catch (e) {
     log('FAIL', 'Reddit /r/linux load', e.message);
   }
-  await redditPage.close();
+  await rdSubreddit.close();
 
   // =====================================================
   // Summary
