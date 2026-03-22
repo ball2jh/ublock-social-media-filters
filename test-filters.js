@@ -103,7 +103,7 @@ async function run() {
     const rows = db.prepare(`
       SELECT name, value, host, path, isSecure, isHttpOnly, sameSite, expiry
       FROM moz_cookies
-      WHERE host LIKE '%youtube.com' OR host LIKE '%google.com' OR host LIKE '%reddit.com'
+      WHERE host LIKE '%youtube.com' OR host LIKE '%google.com' OR host LIKE '%reddit.com' OR host LIKE '%x.com'
     `).all();
     db.close();
     fs.unlinkSync(tmpDb);
@@ -139,7 +139,7 @@ async function run() {
 
   const blockedDomains = [
     'instagram.com', 'tiktok.com', 'facebook.com', 'twitter.com',
-    'x.com', 'snapchat.com', 'pinterest.com', 'threads.net', 'tumblr.com',
+    'snapchat.com', 'pinterest.com', 'threads.net', 'tumblr.com',
   ];
 
   // Verify these domains resolve and serve content (so our block would matter)
@@ -394,6 +394,120 @@ async function run() {
     log('FAIL', 'Reddit /r/linux load', e.message);
   }
   await rdTest.close();
+
+  // =====================================================
+  // SECTION 6: X/Twitter Cosmetic Filtering
+  // =====================================================
+  console.log('\n  --- X/Twitter Cosmetic Filtering ---');
+
+  // Verify no x.com document-level blocks exist (all cosmetic now)
+  const xDocBlocks = filters.filter(f =>
+    !f.startsWith('@@') && f.includes('x.com') && f.includes('$document')
+  );
+  if (xDocBlocks.length === 0) {
+    log('PASS', 'X/Twitter no document-level blocks', 'all X/Twitter filtering is cosmetic');
+  } else {
+    log('FAIL', 'X/Twitter document-level blocks still exist', xDocBlocks.join(', '));
+  }
+
+  // Verify all X/Twitter pages are accessible (no URL blocking)
+  const xAccessTests = [
+    { url: 'https://x.com/home', desc: 'Home' },
+    { url: 'https://x.com/explore', desc: 'Explore' },
+    { url: 'https://x.com/search?q=test', desc: 'Search' },
+    { url: 'https://x.com/notifications', desc: 'Notifications' },
+    { url: 'https://x.com/messages', desc: 'DMs' },
+    { url: 'https://x.com/elonmusk', desc: 'Profile page' },
+    { url: 'https://x.com/elonmusk/status/1903177732079284379', desc: 'Tweet page' },
+  ];
+
+  for (const test of xAccessTests) {
+    const result = matchUrl(test.url, filters);
+    if (result === 'allowed') {
+      log('PASS', `X/Twitter ${test.desc} accessible`, 'not blocked at network level');
+    } else {
+      log('FAIL', `X/Twitter ${test.desc}`, `should be allowed (cosmetic only), got ${result}`);
+    }
+  }
+
+  // Verify cosmetic filter selectors exist in filter file
+  const xCosmetics = filters.filter(f => f.includes('x.com##'));
+  const xExpectedSelectors = [
+    { pattern: 'Timeline: Your Home Timeline', desc: 'home feed hiding' },
+    { pattern: 'Timeline: Explore', desc: 'explore feed hiding' },
+    { pattern: 'Timeline: Notifications', desc: 'notifications feed hiding' },
+    { pattern: 'Timeline: Trending now', desc: 'trending sidebar hiding' },
+    { pattern: 'Who to follow', desc: '"Who to follow" hiding' },
+    { pattern: 'placementTracking', desc: 'promoted tweet hiding' },
+  ];
+
+  for (const sel of xExpectedSelectors) {
+    const found = xCosmetics.some(f => f.includes(sel.pattern));
+    if (found) {
+      log('PASS', `X/Twitter cosmetic: ${sel.desc}`, `filter containing "${sel.pattern}" found`);
+    } else {
+      log('FAIL', `X/Twitter cosmetic: ${sel.desc}`, `no filter containing "${sel.pattern}"`);
+    }
+  }
+
+  // =====================================================
+  // SECTION 7: X/Twitter Cosmetic Selectors (live DOM)
+  // =====================================================
+  console.log('\n  --- X/Twitter Cosmetic Selectors (live DOM) ---');
+
+  const hasXCookies = cookies.some(c => c.domain.includes('x.com'));
+
+  // Test: Home page has timeline element our filter targets
+  const xHome = await ctx.newPage();
+  try {
+    await xHome.goto('https://x.com/home', { timeout: 20000, waitUntil: 'domcontentloaded' });
+    await xHome.waitForTimeout(4000);
+
+    if (!hasXCookies || xHome.url().includes('/login')) {
+      log('PASS', 'X/Twitter home DOM tests skipped', 'no login cookies available');
+    } else {
+      const homeTimeline = await xHome.$('div[aria-label="Timeline: Your Home Timeline"]');
+      if (homeTimeline) {
+        log('PASS', 'X/Twitter home timeline element exists', 'div[aria-label="Timeline: Your Home Timeline"] found — filter will hide it');
+      } else {
+        log('FAIL', 'X/Twitter home timeline element', 'div[aria-label="Timeline: Your Home Timeline"] NOT found — X may have changed DOM');
+      }
+
+      const trending = await xHome.$('div[aria-label="Timeline: Trending now"]');
+      if (trending) {
+        log('PASS', 'X/Twitter trending sidebar exists', 'filter will hide it');
+      } else {
+        log('PASS', 'X/Twitter trending sidebar', 'not rendered (may require specific page state)');
+      }
+
+      const whoToFollow = await xHome.$('aside[aria-label="Who to follow"]');
+      if (whoToFollow) {
+        log('PASS', 'X/Twitter "Who to follow" sidebar exists', 'filter will hide it');
+      } else {
+        log('PASS', 'X/Twitter "Who to follow"', 'not rendered on this page');
+      }
+    }
+  } catch (e) {
+    log('FAIL', 'X/Twitter home page load', e.message);
+  }
+  await xHome.close();
+
+  // Test: Profile page loads and has primary column
+  const xProfile = await ctx.newPage();
+  try {
+    await xProfile.goto('https://x.com/elonmusk', { timeout: 20000, waitUntil: 'domcontentloaded' });
+    await xProfile.waitForTimeout(4000);
+
+    const primaryCol = await xProfile.$('div[data-testid="primaryColumn"]');
+    if (primaryCol) {
+      log('PASS', 'X/Twitter profile page renders', 'primaryColumn found — page is functional');
+    } else {
+      log('FAIL', 'X/Twitter profile page', 'primaryColumn NOT found');
+    }
+  } catch (e) {
+    log('FAIL', 'X/Twitter profile page load', e.message);
+  }
+  await xProfile.close();
 
   // =====================================================
   // Summary

@@ -1,7 +1,7 @@
 ! Title: Social Media Blocker
-! Description: Blocks distracting social media (including Twitch). Selective blocking for YouTube (no feeds/shorts/recommendations) and Reddit (cosmetic feed hiding on homepage/popular/all).
-! Version: 2026.3.18.7
-! Last modified: 2026-03-18
+! Description: Blocks distracting social media (including Twitch). Selective blocking for YouTube (no feeds/shorts/recommendations), Reddit (cosmetic feed hiding on homepage/popular/all), and X/Twitter (no feeds/explore/search, allow tweets and profiles).
+! Version: 2026.3.22.1
+! Last modified: 2026-03-22
 ! Expires: 2 weeks (update frequency)
 ! Homepage: https://github.com/ball2jh/ublock-social-media-filters
 ! License: https://github.com/ball2jh/ublock-social-media-filters/blob/main/LICENSE
@@ -24,11 +24,8 @@
 ||fb.com^
 ||fb.watch^
 
-! Twitter / X
+! Twitter / X (old domain — redirects to x.com)
 ||twitter.com^
-||x.com^
-||t.co^
-||twimg.com^
 
 ! Snapchat
 ||snapchat.com^
@@ -165,3 +162,33 @@ www.reddit.com##shreddit-ad-post
 
 ! --- Hide sidebar ads on all pages ---
 www.reddit.com##shreddit-sidebar-ad
+
+! ============================================
+! SECTION 4: X/Twitter — Selective Blocking
+! ============================================
+! Strategy: Let all pages load, surgically hide distracting content.
+! Cosmetic filters hide feeds on home/explore/notifications while preserving page shell.
+! twimg.com (images) and t.co (link shortener) are unblocked so pages render.
+
+! --- Hide home timeline feed content ---
+! Hides the tweet feed on /home (tabs and compose box remain functional)
+x.com##:matches-path(/^\/(home)?$/) div[aria-label="Timeline: Your Home Timeline"]
+
+! --- Hide explore feed content ---
+! Hides the explore feed (search bar and tabs remain functional)
+x.com##:matches-path(/^\/explore/) div[aria-label="Timeline: Explore"]
+
+! --- Hide notifications feed content ---
+x.com##:matches-path(/^\/notifications/) div[aria-label="Timeline: Notifications"]
+
+! --- Hide trending sidebar on all pages ---
+x.com##div[aria-label="Timeline: Trending now"]
+
+! --- Hide "Who to follow" sidebar suggestions ---
+x.com##aside[aria-label="Who to follow"]
+
+! --- Hide "Subscribe to Premium" sidebar upsell ---
+x.com##aside[aria-label="Subscribe to Premium"]
+
+! --- Hide promoted tweets ---
+x.com##article:has([data-testid="placementTracking"])

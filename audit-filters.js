@@ -150,6 +150,36 @@ const KNOWN_REDDIT_DISTRACTIONS = [
   { selector: 'shreddit-sidebar-ad', desc: 'Sidebar ad' },
 ];
 
+// X/Twitter pages to audit
+const X_PAGES = [
+  {
+    name: 'Home',
+    url: 'https://x.com/home',
+    requiresAuth: true,
+    selectors: [
+      'div[data-testid="primaryColumn"]',
+      'div[data-testid="sidebarColumn"]',
+      'div[aria-label="Timeline: Your Home Timeline"]',
+      'div[aria-label="Timeline: Trending now"]',
+      'aside[aria-label="Who to follow"]',
+    ],
+  },
+  {
+    name: 'Profile (@elonmusk)',
+    url: 'https://x.com/elonmusk',
+    requiresAuth: false,
+    selectors: [
+      'div[data-testid="primaryColumn"]',
+      'div[data-testid="sidebarColumn"]',
+    ],
+  },
+];
+
+// Known distracting X/Twitter elements that SHOULD be filtered but might not be
+const KNOWN_X_DISTRACTIONS = [
+  { selector: 'aside[aria-label="Subscribe to Premium"]', desc: 'Premium upsell sidebar' },
+];
+
 // ============================================================
 // Color helpers
 // ============================================================
@@ -179,6 +209,7 @@ function extractCookies() {
     WHERE host LIKE '%youtube.com'
        OR host LIKE '%google.com'
        OR host LIKE '%reddit.com'
+       OR host LIKE '%x.com'
   `).all();
   db.close();
   fs.unlinkSync(tmpDb);
@@ -609,6 +640,126 @@ async function auditRedditPages(context, cosmetics) {
 }
 
 // ============================================================
+// X/Twitter DOM audit
+// ============================================================
+
+async function auditXPages(context, cosmetics) {
+  const report = [];
+  const xCosmetics = cosmetics.filter(
+    (c) => c.domain === 'x.com' || c.domain === ''
+  );
+
+  for (const pageConfig of X_PAGES) {
+    console.log(`\n  ${C.bold(pageConfig.name)} ${C.dim(pageConfig.url)}`);
+    const page = await context.newPage();
+    const pageResults = { page: pageConfig.name, url: pageConfig.url, selectors: [] };
+
+    try {
+      await page.goto(pageConfig.url, { timeout: PAGE_LOAD_TIMEOUT, waitUntil: 'domcontentloaded' });
+      await page.waitForTimeout(SPA_RENDER_WAIT);
+
+      // Skip auth-required pages if redirected to login
+      if (pageConfig.requiresAuth && page.url().includes('/login')) {
+        console.log(`    ${C.dim('·')} ${C.dim('skipped — requires login')}`);
+        await page.close();
+        report.push(pageResults);
+        continue;
+      }
+
+      // Test every X cosmetic selector on this page
+      for (const cosmetic of xCosmetics) {
+        if (cosmetic.isExtended) {
+          const baseSelector = cosmetic.selector.split(':has(')[0].split(':has-text(')[0].split(':upward(')[0];
+          if (baseSelector && baseSelector !== cosmetic.selector) {
+            try {
+              const count = await page.$$eval(baseSelector, (els) => els.length);
+              const status = count > 0 ? 'base-valid' : 'base-missing';
+              pageResults.selectors.push({
+                filter: cosmetic.raw, selector: cosmetic.selector,
+                baseSelector, status, count, extended: true,
+              });
+              const icon = count > 0 ? C.green('~') : C.yellow('?');
+              console.log(`    ${icon} ${C.dim(cosmetic.selector.slice(0, 80))} ${C.dim(`(base: ${count} match${count !== 1 ? 'es' : ''})`)}`);
+            } catch {
+              pageResults.selectors.push({
+                filter: cosmetic.raw, selector: cosmetic.selector,
+                status: 'extended-untestable', extended: true,
+              });
+              console.log(`    ${C.dim('·')} ${C.dim(cosmetic.selector.slice(0, 80))} ${C.dim('(extended — untestable)')}`);
+            }
+          } else {
+            pageResults.selectors.push({
+              filter: cosmetic.raw, selector: cosmetic.selector,
+              status: 'extended-untestable', extended: true,
+            });
+            console.log(`    ${C.dim('·')} ${C.dim(cosmetic.selector.slice(0, 80))} ${C.dim('(extended — untestable)')}`);
+          }
+          continue;
+        }
+
+        const testSelector = cosmetic.selector;
+        if (!testSelector) continue;
+
+        try {
+          const count = await page.$$eval(testSelector, (els) => els.length);
+          const status = count > 0 ? 'valid' : 'no-match';
+          pageResults.selectors.push({
+            filter: cosmetic.raw, selector: testSelector, status, count,
+          });
+          const icon = count > 0 ? C.green('✓') : C.red('✗');
+          console.log(`    ${icon} ${testSelector.slice(0, 80)} ${C.dim(`(${count})`)}`);
+        } catch (e) {
+          pageResults.selectors.push({
+            filter: cosmetic.raw, selector: testSelector, status: 'error', error: e.message,
+          });
+          console.log(`    ${C.red('!')} ${testSelector.slice(0, 80)} ${C.red('(invalid selector)')}`);
+        }
+      }
+
+      // Check for page-specific expected selectors
+      console.log(`    ${C.dim('--- page-specific checks ---')}`);
+      for (const sel of pageConfig.selectors) {
+        try {
+          const count = await page.$$eval(sel, (els) => els.length);
+          const icon = count > 0 ? C.green('✓') : C.yellow('·');
+          console.log(`    ${icon} ${sel} ${C.dim(`(${count})`)}`);
+        } catch {
+          console.log(`    ${C.red('!')} ${sel} ${C.red('(invalid)')}`);
+        }
+      }
+
+      // Scan for known distractions not covered by filters
+      console.log(`    ${C.dim('--- distraction scan ---')}`);
+      for (const d of KNOWN_X_DISTRACTIONS) {
+        try {
+          if (/(:has-text|:has\(|:upward)/.test(d.selector)) continue;
+          const count = await page.$$eval(d.selector, (els) => els.length);
+          if (count > 0) {
+            const covered = xCosmetics.some((c) => c.selector === d.selector || c.selector.includes(d.selector));
+            if (!covered) {
+              console.log(`    ${C.yellow('⚠')} ${C.yellow('UNCOVERED')}: ${d.desc} ${C.dim(`(${d.selector}, ${count} elements)`)}`);
+              pageResults.selectors.push({
+                selector: d.selector, status: 'missing', desc: d.desc, count,
+              });
+            }
+          }
+        } catch {
+          // Invalid selector — skip
+        }
+      }
+    } catch (e) {
+      console.log(`    ${C.red('ERROR')}: ${e.message}`);
+      pageResults.error = e.message;
+    }
+
+    await page.close();
+    report.push(pageResults);
+  }
+
+  return report;
+}
+
+// ============================================================
 // Main
 // ============================================================
 
@@ -624,7 +775,8 @@ async function main() {
     cookies = extractCookies();
     const ytCookies = cookies.filter((c) => c.domain.includes('youtube') || c.domain.includes('google'));
     const rdCookies = cookies.filter((c) => c.domain.includes('reddit'));
-    console.log(`    ${C.green('✓')} ${cookies.length} cookies total (${ytCookies.length} YouTube/Google, ${rdCookies.length} Reddit)`);
+    const xCookies = cookies.filter((c) => c.domain.includes('x.com'));
+    console.log(`    ${C.green('✓')} ${cookies.length} cookies total (${ytCookies.length} YouTube/Google, ${rdCookies.length} Reddit, ${xCookies.length} X/Twitter)`);
   } catch (e) {
     console.error(`    ${C.red('✗')} Cookie extraction failed: ${e.message}`);
     console.error(`    Make sure Firefox is using profile at ${FIREFOX_PROFILE}`);
@@ -669,6 +821,10 @@ async function main() {
   // Step 6: Audit Reddit pages
   console.log(`\n${C.bold('─── Reddit Cosmetic Selectors ───')}`);
   const rdReport = await auditRedditPages(context, cosmetic);
+
+  // Step 7: Audit X/Twitter pages
+  console.log(`\n${C.bold('─── X/Twitter Cosmetic Selectors ───')}`);
+  const xReport = await auditXPages(context, cosmetic);
 
   await browser.close();
 
@@ -763,8 +919,12 @@ async function main() {
   console.log('');
   const rdSummary = aggregateReport(rdReport, 'Reddit');
 
+  // X/Twitter summary
+  console.log('');
+  const xSummary = aggregateReport(xReport, 'X/Twitter');
+
   // Exit code
-  const totalFailed = ytSummary.brokenCount + ytSummary.errorCount + rdSummary.brokenCount + rdSummary.errorCount;
+  const totalFailed = ytSummary.brokenCount + ytSummary.errorCount + rdSummary.brokenCount + rdSummary.errorCount + xSummary.brokenCount + xSummary.errorCount;
   console.log(`\n  ${totalFailed === 0 ? C.green('All checks passed!') : C.red(`${totalFailed} issue(s) to review`)}\n`);
   process.exit(totalFailed > 0 ? 1 : 0);
 }
