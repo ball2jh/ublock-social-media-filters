@@ -181,11 +181,24 @@ x.com##:matches-path(/^\/explore/) div[aria-label="Timeline: Explore"]
 ! --- Hide notifications feed content ---
 x.com##:matches-path(/^\/notifications/) div[aria-label="Timeline: Notifications"]
 
+! --- Hide left sidebar nav distractions ---
+x.com##a[data-testid="AppTabBar_Home_Link"]
+x.com##a[data-testid="AppTabBar_Explore_Link"]
+x.com##a[data-testid="AppTabBar_Notifications_Link"]
+x.com##a[data-testid="AppTabBar_Follow_Link"]
+x.com##a[href="/i/grok"]
+x.com##a[href="/i/jf/creators/studio"]
+x.com##a[data-testid="premium-signup-tab"]
+
+! --- Hide Grok drawer (floating widget) ---
+x.com##div[data-testid="GrokDrawer"]
+
 ! --- Hide trending sidebar on all pages ---
 x.com##div[aria-label="Timeline: Trending now"]
 
-! --- Hide "Who to follow" sidebar suggestions ---
+! --- Hide "Who to follow" / "You might like" / "Creators for you" sidebar ---
 x.com##aside[aria-label="Who to follow"]
+x.com##aside[aria-label="Creators for you"]
 
 ! --- Hide "Subscribe to Premium" sidebar upsell ---
 x.com##aside[aria-label="Subscribe to Premium"]
