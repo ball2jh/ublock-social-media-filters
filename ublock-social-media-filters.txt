@@ -193,14 +193,20 @@ x.com##a[data-testid="premium-signup-tab"]
 ! --- Hide Grok drawer (floating widget) ---
 x.com##div[data-testid="GrokDrawer"]
 
-! --- Hide trending sidebar on all pages ---
-x.com##div[aria-label="Timeline: Trending now"]
+! --- Hide trending/news feed on trending detail pages ---
+x.com##:matches-path(/^\/i\/trending/) div[data-testid="primaryColumn"] section
 
-! --- Hide "Who to follow" / "You might like" / "Creators for you" sidebar ---
+! --- Hide right sidebar distractions on all pages ---
+! Trending / What's happening
+x.com##div[aria-label="Timeline: Trending now"]
+! Today's News section
+x.com##div[data-testid="sidebarColumn"] section:has([role="heading"]:has-text(/Today.s News/i))
+! "Who to follow" / "You might like" / "Creators for you"
 x.com##aside[aria-label="Who to follow"]
 x.com##aside[aria-label="Creators for you"]
-
-! --- Hide "Subscribe to Premium" sidebar upsell ---
+! "Relevant people" (appears on tweet pages)
+x.com##aside[aria-label="Relevant people"]
+! "Subscribe to Premium" upsell
 x.com##aside[aria-label="Subscribe to Premium"]
 
 ! --- Hide promoted tweets ---
