@@ -436,8 +436,7 @@ async function run() {
     { pattern: 'Timeline: Your Home Timeline', desc: 'home feed hiding' },
     { pattern: 'Timeline: Explore', desc: 'explore feed hiding' },
     { pattern: 'Timeline: Notifications', desc: 'notifications feed hiding' },
-    { pattern: 'Timeline: Trending now', desc: 'trending sidebar hiding' },
-    { pattern: 'Who to follow', desc: '"Who to follow" hiding' },
+    { pattern: 'aria-label="Trending"', desc: 'trending/news sidebar hiding' },
     { pattern: 'placementTracking', desc: 'promoted tweet hiding' },
   ];
 
@@ -473,18 +472,11 @@ async function run() {
         log('FAIL', 'X/Twitter home timeline element', 'div[aria-label="Timeline: Your Home Timeline"] NOT found — X may have changed DOM');
       }
 
-      const trending = await xHome.$('div[aria-label="Timeline: Trending now"]');
-      if (trending) {
-        log('PASS', 'X/Twitter trending sidebar exists', 'filter will hide it');
+      const trendingSidebar = await xHome.$('div[aria-label="Trending"]');
+      if (trendingSidebar) {
+        log('PASS', 'X/Twitter trending sidebar container exists', 'div[aria-label="Trending"] found — filter will hide it');
       } else {
         log('PASS', 'X/Twitter trending sidebar', 'not rendered (may require specific page state)');
-      }
-
-      const whoToFollow = await xHome.$('aside[aria-label="Who to follow"]');
-      if (whoToFollow) {
-        log('PASS', 'X/Twitter "Who to follow" sidebar exists', 'filter will hide it');
-      } else {
-        log('PASS', 'X/Twitter "Who to follow"', 'not rendered on this page');
       }
     }
   } catch (e) {

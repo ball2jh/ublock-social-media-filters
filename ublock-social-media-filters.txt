@@ -197,17 +197,19 @@ x.com##div[data-testid="GrokDrawer"]
 x.com##:matches-path(/^\/i\/trending/) div[data-testid="primaryColumn"] section
 
 ! --- Hide right sidebar distractions on all pages ---
-! Trending / What's happening
-x.com##div[aria-label="Timeline: Trending now"]
-! Today's News section
-x.com##div[data-testid="sidebarColumn"] section:has([role="heading"]:has-text(/Today.s News/i))
-! "Who to follow" / "You might like" / "Creators for you"
-x.com##aside[aria-label="Who to follow"]
+! Hides the entire trending/news/who-to-follow sidebar area
+! (contains Today's News, Trending now, What's happening, Who to follow)
+x.com##div[aria-label="Trending"]
+! "Creators for you" (may appear as standalone aside)
 x.com##aside[aria-label="Creators for you"]
-! "Relevant people" (appears on tweet pages)
+! "Relevant people" (aside on some pages, timeline div on trending pages)
 x.com##aside[aria-label="Relevant people"]
+x.com##div[aria-label="Timeline: Relevant people"]
 ! "Subscribe to Premium" upsell
 x.com##aside[aria-label="Subscribe to Premium"]
+
+! --- Hide "new posts available" pill ---
+x.com##div[role="status"]:has([data-testid="pillLabel"])
 
 ! --- Hide promoted tweets ---
 x.com##article:has([data-testid="placementTracking"])
