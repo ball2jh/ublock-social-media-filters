@@ -1,36 +1,65 @@
 # uBlock Origin Social Media Filters
 
-Custom filter list for [uBlock Origin](https://ublockorigin.com/) that blocks distracting social media while preserving useful content on YouTube, Reddit, and X/Twitter.
+Custom filter list for [uBlock Origin](https://ublockorigin.com/) that blocks distracting social media while preserving the useful parts of YouTube, Reddit, and X/Twitter.
+
+The approach is to block the *feeds* — the endless-scroll surfaces — while leaving search, direct links, and everything you navigate to deliberately intact. Feed URLs are blocked outright; feed content that appears on other pages is hidden.
 
 ## What it does
 
 ### Fully blocked
-Instagram, TikTok, Facebook, Snapchat, Pinterest, Threads, Tumblr, Twitch
+Instagram, TikTok, Facebook, Snapchat, Pinterest, Threads, Tumblr, Twitch, and the old `twitter.com` domain.
 
-### YouTube (selective)
-- **Blocked**: Homepage feed, Shorts, recommendation sidebar, end-screen suggestions
-- **Allowed**: Search, video pages, channels, subscriptions, playlists, history
+### YouTube
+| | |
+| --- | --- |
+| **Blocked outright** | Homepage (`youtube.com` and `m.youtube.com`), Shorts, live streams, `/feed/trending` |
+| **Hidden on other pages** | Recommendation sidebar, end-screen suggestions, Shorts shelves and chips, live-badged videos, the subscribed-channel list in the sidebar |
+| **Untouched** | Search, video pages, channels, playlists, history, and the `/feed/subscriptions` page |
 
-### Reddit (selective)
-- **Blocked**: Homepage feed, `/r/popular`, `/r/all`, trending carousel, sidebar ads
-- **Allowed**: Subreddits (`/r/*`), user profiles, posts, search, settings, messaging
+Since the homepage is blocked, enter via `youtube.com/feed/subscriptions` or a search URL.
 
-### X/Twitter (selective)
-- **Blocked**: Home timeline feed, explore feed, notifications feed, trending sidebar, "Who to follow", promoted tweets, Grok, Premium upsell
-- **Allowed**: Profiles, individual tweets, DMs, search, bookmarks
+### Reddit
+| | |
+| --- | --- |
+| **Blocked outright** | Homepage (`www` and `old`), `/r/popular`, `/r/all`, `/best` |
+| **Hidden on other pages** | Feeds anywhere that isn't a subreddit or a post, gallery carousel, recent posts, games drawer, sidebar ads and promoted posts |
+| **Untouched** | Subreddits, user profiles, posts, search, settings, messaging |
+
+### X/Twitter
+| | |
+| --- | --- |
+| **Blocked outright** | `/`, `/home`, `/explore`, `/notifications`, `/i/trending`, `/i/grok` |
+| **Hidden on other pages** | Sidebar nav links to those routes, trending panel, "Relevant people", "Creators for you", Grok drawer, Premium upsell, promoted tweets, the new-posts pill |
+| **Untouched** | Profiles, individual tweets, DMs, search, bookmarks |
+
+Blocked routes show uBlock Origin's block page. Some are also hidden cosmetically, because in-app navigation on these sites is a client-side route change that never triggers a page load.
 
 ## How to use
 
-1. Install [uBlock Origin](https://ublockorigin.com/) in Firefox (or Chromium)
+1. Install [uBlock Origin](https://ublockorigin.com/) in Firefox
 2. Click the uBlock Origin icon → gear icon (dashboard)
-3. Go to the **"Filter lists"** tab
-4. Scroll to the bottom and click **"Import..."**
-5. Paste this URL and click **"Apply changes"**:
+3. Go to the **Filter lists** tab
+4. Scroll to the bottom and click **Import...**
+5. Paste this URL and click **Apply changes**:
    ```
    https://raw.githubusercontent.com/ball2jh/ublock-social-media-filters/main/ublock-social-media-filters.txt
    ```
 
-The filter list will auto-update every 2 weeks. To force an update, click **"Purge all caches"** then **"Update now"** on the Filter lists tab.
+The list auto-updates every 2 weeks. To force an update, click **Purge all caches** then **Update now** on the Filter lists tab.
+
+## Making it stick
+
+A filter list is trivially switched off — that is the point of an ad blocker, and the opposite of what you want from a distraction blocker. [`deploy/`](deploy/) contains an optional setup for Linux + Firefox that pushes the same rules into layers uBlock Origin's power button cannot reach: a Firefox enterprise policy that force-installs the extension and blocks the URLs itself, a user stylesheet that carries the cosmetic rules, and AdGuard Home rules for the whole-domain blocks.
+
+Every layer is generated from this one filter list. See [`deploy/README.md`](deploy/README.md).
+
+## Development
+
+```
+node validate-filters.js    # check syntax
+node test-filters.js        # test against live pages (Playwright)
+node audit-filters.js       # audit selectors for staleness
+```
 
 ## Credits
 

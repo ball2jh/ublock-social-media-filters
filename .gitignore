@@ -1,2 +1,9 @@
 ublock-origin.xpi
 node_modules/
+deploy/local-blocks.txt
+
+# deploy/ build output -- regenerate with ./deploy/generate.sh.
+# These embed local-blocks.txt and must never be committed.
+deploy/firefox-policies.json
+deploy/userContent.css
+deploy/adguardhome-user-rules.txt

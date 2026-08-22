@@ -1,0 +1,30 @@
+{
+  "policies": {
+    "ExtensionSettings": {
+      "uBlock0@raymondhill.net": {
+        "installation_mode": "force_installed",
+        "install_url": "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi",
+        "private_browsing": true
+      }
+    },
+    "DisableSafeMode": true,
+    "3rdparty": {
+      "Extensions": {
+        "uBlock0@raymondhill.net": {
+          "toOverwrite": {
+            "trustedSiteDirectives": [
+              "chrome-extension-scheme",
+              "moz-extension-scheme"
+            ]
+          }
+        }
+      }
+    },
+    "Preferences": {
+      "toolkit.legacyUserProfileCustomizations.stylesheets": {
+        "Value": true,
+        "Status": "locked"
+      }
+    }
+  }
+}
