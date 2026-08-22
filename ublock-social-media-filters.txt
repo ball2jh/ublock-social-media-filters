@@ -1,7 +1,7 @@
 ! Title: Social Media Blocker
-! Description: Blocks distracting social media (including Twitch). Selective blocking for YouTube (no feeds/shorts/recommendations), Reddit (cosmetic feed hiding on homepage/popular/all), and X/Twitter (no feeds/explore/search, allow tweets and profiles).
-! Version: 2026.3.22.1
-! Last modified: 2026-03-22
+! Description: Blocks distracting social media (including Twitch). Selective blocking for YouTube, Reddit and X/Twitter: feed URLs are blocked outright, feed content on other pages is hidden, and search, profiles, posts and direct links stay usable.
+! Version: 2026.8.22.1
+! Last modified: 2026-08-22
 ! Expires: 2 weeks (update frequency)
 ! Homepage: https://github.com/ball2jh/ublock-social-media-filters
 ! License: https://github.com/ball2jh/ublock-social-media-filters/blob/main/LICENSE
@@ -51,12 +51,20 @@
 ! ============================================
 
 ! --- Block homepage feed content ---
-! Hides the entire homepage browse content (search bar remains functional)
+! Route block on the homepage itself; enter via /feed/subscriptions or search
+|https://www.youtube.com/|$document
+|https://m.youtube.com/|$document
+! SPA backstop: in-app navigation home is a route change, not a page load
 www.youtube.com##ytd-browse[page-subtype="home"]
 
 ! --- Block Shorts (page navigation) ---
 ! Blocks navigating to any /shorts/ URL entirely (uBlock strict blocking page)
 ||youtube.com/shorts$document
+
+! --- Block Shorts (SPA navigation backstop) ---
+! $document only fires on full page loads; in-app navigation to a short is a
+! client-side route change, so remove the Shorts player itself (stops playback)
+www.youtube.com##ytd-shorts:remove()
 
 ! --- Block Shorts (cosmetic - hide from all feeds and UI) ---
 ! Source: github.com/gijsdev/ublock-hide-yt-shorts (maintained, v2025.8.31)
@@ -88,7 +96,13 @@ www.youtube.com##ytd-reel-shelf-renderer:has(#title:has-text(/(^| )Shorts.?Remix
 www.youtube.com##yt-chip-cloud-chip-renderer:has(yt-formatted-string:has-text(/^Shorts$/i))
 
 ! Hide Shorts sections on search page
-www.youtube.com##.yt-shelf-header-layout__title:has-text(/(^| )Shorts( |$)/i):upward(grid-shelf-view-model)
+! (structural match: YouTube renamed shelf header classes to camelCase in 2026,
+! so match any grid shelf containing shorts links instead of header text)
+www.youtube.com##grid-shelf-view-model:has(a[href^="/shorts/"])
+
+! Hide individual Shorts items in new view-model markup (search, channels)
+www.youtube.com##ytm-shorts-lockup-view-model
+www.youtube.com##ytm-shorts-lockup-view-model-v2
 
 ! --- Block live streams from feeds and search ---
 ! Hide videos with is-live-video attribute on thumbnail
@@ -97,14 +111,21 @@ www.youtube.com##ytd-video-renderer:has(ytd-thumbnail[is-live-video])
 www.youtube.com##ytd-grid-video-renderer:has(ytd-thumbnail[is-live-video])
 
 ! Hide videos with LIVE badge
+! (old BEM class kept for A/B coverage; YouTube renamed to ytBadgeShapeLive in 2026)
 www.youtube.com##ytd-video-renderer:has(badge-shape.yt-badge-shape--live)
 www.youtube.com##ytd-rich-item-renderer:has(badge-shape.yt-badge-shape--live)
+www.youtube.com##ytd-video-renderer:has(badge-shape.ytBadgeShapeLive)
+www.youtube.com##ytd-rich-item-renderer:has(badge-shape.ytBadgeShapeLive)
+www.youtube.com##yt-lockup-view-model:has(badge-shape.ytBadgeShapeLive)
 
 ! Hide "Live" chip/category on homepage and search
 www.youtube.com##yt-chip-cloud-chip-renderer:has(yt-formatted-string:has-text(/^Live$/i))
 
 ! Block navigating to /live/ URLs
 ||youtube.com/live$document
+
+! --- Block the trending feed ---
+||youtube.com/feed/trending$document
 
 ! --- Block live stream watch pages ---
 ! Hide page content when the player has a live badge
@@ -128,12 +149,20 @@ www.youtube.com##.ytp-ce-element
 www.youtube.com##.ytp-endscreen-content
 
 ! ============================================
-! SECTION 3: Reddit — Cosmetic Filtering
+! SECTION 3: Reddit — Selective Blocking
 ! ============================================
-! Strategy: Let all pages load, surgically hide distracting content.
+! Strategy: Route-block the aggregate feeds, cosmetically hide the rest.
 ! Uses shreddit-app[pagetype] to scope selectors (Reddit's Lit web components).
 ! Feeds hidden on all pages EXCEPT: community (subreddits), post_detail (posts)
 ! This catches home, news, popular, all, and any future feed types
+
+! --- Block the aggregate feed routes ---
+! Enter via a subreddit or search; these pages have no non-feed content
+|https://www.reddit.com/|$document
+|https://old.reddit.com/|$document
+||reddit.com/r/popular$document
+||reddit.com/r/all$document
+||reddit.com/best$document
 
 ! --- Hide feeds on all pages EXCEPT subreddits and post pages ---
 ! Uses :not() to preserve feeds only where they belong (community pages, post detail)
@@ -170,8 +199,18 @@ www.reddit.com##shreddit-sidebar-ad
 ! Cosmetic filters hide feeds on home/explore/notifications while preserving page shell.
 ! twimg.com (images) and t.co (link shortener) are unblocked so pages render.
 
-! --- Hide home timeline feed content ---
-! Hides the tweet feed on /home (tabs and compose box remain functional)
+! --- Block the feed routes ---
+! Enter via a profile, bookmark, or direct tweet link
+|https://x.com/|$document
+||x.com/home$document
+||x.com/explore$document
+||x.com/notifications$document
+||x.com/i/trending$document
+||x.com/i/grok$document
+
+! --- Hide home timeline feed content (SPA backstop) ---
+! In-app navigation is a route change, not a page load, so the route block
+! above does not fire; hide the feed too
 x.com##:matches-path(/^\/(home)?$/) div[aria-label="Timeline: Your Home Timeline"]
 
 ! --- Hide explore feed content ---
