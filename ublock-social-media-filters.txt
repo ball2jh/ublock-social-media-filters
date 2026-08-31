@@ -143,6 +143,9 @@ www.youtube.com##ytd-guide-collapsible-section-entry-renderer:has(a[href="/feed/
 www.youtube.com##ytd-watch-flexy #secondary
 ! Remove max-width constraint so primary fills the freed space
 www.youtube.com##ytd-watch-flexy #primary:style(max-width: none !important;)
+! Hide ambient mode glow: its canvas is scaled to 1.5x the player width, which
+! overflows the viewport (horizontal scrollbar) once primary expands full-width
+www.youtube.com##ytd-watch-flexy #cinematics
 
 ! --- Block end-screen video suggestions ---
 www.youtube.com##.ytp-ce-element
