@@ -167,6 +167,18 @@ if (fullBlocks.length > 0) {
   console.log('');
 }
 
+console.log('  Twitch and Kick selective:');
+console.log('    [ ] twitch.tv             → homepage blocked');
+console.log('    [ ] twitch.tv/directory   → browsing blocked');
+console.log('    [ ] twitch.tv/search      → on-site search blocked');
+console.log('    [ ] twitch.tv/{channel}   → channel loads, no left sidebar');
+console.log('    [ ] kick.com              → homepage blocked');
+console.log('    [ ] kick.com/browse       → browsing blocked');
+console.log('    [ ] kick.com/category/*   → category browsing blocked');
+console.log('    [ ] kick.com/search       → on-site search blocked');
+console.log('    [ ] kick.com/{channel}    → channel loads, no left sidebar');
+console.log('');
+
 console.log('  YouTube selective (expect content hidden, not blocked):');
 console.log('    [ ] youtube.com           → homepage feed hidden, search bar works');
 console.log('    [ ] youtube.com/watch?v=* → video plays, no sidebar recommendations');

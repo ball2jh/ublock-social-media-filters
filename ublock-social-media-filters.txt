@@ -1,7 +1,7 @@
 ! Title: Social Media Blocker
-! Description: Blocks distracting social media (including Twitch). Selective blocking for YouTube, Reddit and X/Twitter: feed URLs are blocked outright, feed content on other pages is hidden, and search, profiles, posts and direct links stay usable.
-! Version: 2026.8.22.1
-! Last modified: 2026-08-22
+! Description: Blocks distracting social media. Selective blocking for YouTube, Reddit, X/Twitter, Twitch, and Kick keeps search, profiles, posts and direct links usable while hiding feeds, homepages and left sidebars.
+! Version: 2026.8.30.1
+! Last modified: 2026-08-30
 ! Expires: 2 weeks (update frequency)
 ! Homepage: https://github.com/ball2jh/ublock-social-media-filters
 ! License: https://github.com/ball2jh/ublock-social-media-filters/blob/main/LICENSE
@@ -41,13 +41,44 @@
 ! Tumblr
 ||tumblr.com^
 
-! Twitch
-||twitch.tv^
-||twitchcdn.net^
-||jtvnw.net^
+! ============================================
+! SECTION 2: Twitch and Kick selective blocking
+! ============================================
+! Block each homepage and browsing directory, including in-app navigation.
+! Hide the left sidebar and site search while leaving direct channels, videos,
+! and clips usable.
+
+! --- Twitch ---
+|https://www.twitch.tv/|$document
+||twitch.tv/directory$document
+||twitch.tv/search$document
+www.twitch.tv##:matches-path(/^\/$/) main
+www.twitch.tv##:matches-path(/^\/directory/) main
+www.twitch.tv##:matches-path(/^\/search/) main
+www.twitch.tv##.side-nav
+www.twitch.tv###sideNav
+www.twitch.tv##nav form:has(input[type="search"])
+! Remove the hover-expand margin left behind by the hidden sidebar
+www.twitch.tv##.side-nav--hover-exp ~ .twilight-main:style(margin-left: 0 !important;)
+
+! --- Kick ---
+|https://kick.com/|$document
+||kick.com/browse$document
+||kick.com/category$document
+||kick.com/search$document
+kick.com##:matches-path(/^\/$/) #main-container
+kick.com##:matches-path(/^\/browse/) #main-container
+kick.com##:matches-path(/^\/category/) #main-container
+kick.com##:matches-path(/^\/search/) #main-container
+kick.com###sidebar-wrapper
+kick.com##[data-testid="sidebar-collapse"]
+kick.com##nav div:has(> input[data-testid="search"])
+! Remove the narrow-layout spacer and backdrop left behind by the sidebar
+kick.com##div:has(> #sidebar-wrapper) > div:first-child
+kick.com###sidebar-wrapper + button
 
 ! ============================================
-! SECTION 2: YouTube — Selective Blocking
+! SECTION 3: YouTube — Selective Blocking
 ! ============================================
 
 ! --- Block homepage feed content ---
@@ -151,8 +182,15 @@ www.youtube.com##ytd-watch-flexy #cinematics
 www.youtube.com##.ytp-ce-element
 www.youtube.com##.ytp-endscreen-content
 
+! --- Block the autoplay "Up next" countdown card shown when a video ends ---
+! Hides the card only; the player still auto-advances if Autoplay is on.
+! Turn Autoplay off via the toggle in the player controls for a full fix.
+www.youtube.com##.ytp-autonav-endscreen-countdown-overlay
+www.youtube.com##.ytp-autonav-endscreen-countdown-container
+m.youtube.com##.ytp-autonav-endscreen-countdown-overlay
+
 ! ============================================
-! SECTION 3: Reddit — Selective Blocking
+! SECTION 4: Reddit — Selective Blocking
 ! ============================================
 ! Strategy: Route-block the aggregate feeds, cosmetically hide the rest.
 ! Uses shreddit-app[pagetype] to scope selectors (Reddit's Lit web components).
@@ -196,7 +234,7 @@ www.reddit.com##shreddit-ad-post
 www.reddit.com##shreddit-sidebar-ad
 
 ! ============================================
-! SECTION 4: X/Twitter — Selective Blocking
+! SECTION 5: X/Twitter — Selective Blocking
 ! ============================================
 ! Strategy: Let all pages load, surgically hide distracting content.
 ! Cosmetic filters hide feeds on home/explore/notifications while preserving page shell.

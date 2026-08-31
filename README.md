@@ -1,19 +1,29 @@
 # uBlock Origin Social Media Filters
 
-Custom filter list for [uBlock Origin](https://ublockorigin.com/) that blocks distracting social media while preserving the useful parts of YouTube, Reddit, and X/Twitter.
+Custom filter list for [uBlock Origin](https://ublockorigin.com/) that blocks distracting social media while preserving the useful parts of YouTube, Reddit, X/Twitter, Twitch, and Kick.
 
-The approach is to block the *feeds* — the endless-scroll surfaces — while leaving search, direct links, and everything you navigate to deliberately intact. Feed URLs are blocked outright; feed content that appears on other pages is hidden.
+The list removes endless-scroll entry points while leaving search, direct links, and deliberate navigation intact. Feed and homepage URLs are blocked outright. Distracting content reached through in-app navigation is hidden.
 
 ## What it does
 
 ### Fully blocked
-Instagram, TikTok, Facebook, Snapchat, Pinterest, Threads, Tumblr, Twitch, and the old `twitter.com` domain.
+Instagram, TikTok, Facebook, Snapchat, Pinterest, Threads, Tumblr, and the old `twitter.com` domain.
+
+### Twitch and Kick
+
+| | |
+| --- | --- |
+| **Blocked outright** | Both homepages, both search pages, Twitch `/directory`, Kick `/browse`, and Kick `/category` |
+| **Hidden on other pages** | The left sidebar, its toggle, and the site search control |
+| **Untouched** | Direct channel pages, videos, and clips |
+
+Use Google or a direct channel URL instead of browsing either site.
 
 ### YouTube
 | | |
 | --- | --- |
 | **Blocked outright** | Homepage (`youtube.com` and `m.youtube.com`), Shorts, live streams, `/feed/trending` |
-| **Hidden on other pages** | Recommendation sidebar, end-screen suggestions, Shorts shelves and chips, live-badged videos, the subscribed-channel list in the sidebar |
+| **Hidden on other pages** | Recommendation sidebar, end-screen suggestions, the autoplay "Up next" countdown card, Shorts shelves and chips, live-badged videos, the subscribed-channel list in the sidebar |
 | **Untouched** | Search, video pages, channels, playlists, history, and the `/feed/subscriptions` page |
 
 Since the homepage is blocked, enter via `youtube.com/feed/subscriptions` or a search URL.
@@ -49,7 +59,7 @@ The list auto-updates every 2 weeks. To force an update, click **Purge all cache
 
 ## Making it stick
 
-A filter list is trivially switched off — that is the point of an ad blocker, and the opposite of what you want from a distraction blocker. [`deploy/`](deploy/) contains an optional setup for Linux + Firefox that pushes the same rules into layers uBlock Origin's power button cannot reach: a Firefox enterprise policy that force-installs the extension and blocks the URLs itself, a user stylesheet that carries the cosmetic rules, and AdGuard Home rules for the whole-domain blocks.
+A filter list is trivially switched off — that is the point of an ad blocker, and the opposite of what you want from a distraction blocker. [`deploy/`](deploy/) contains an optional setup for Linux + Firefox that pushes the same rules into layers uBlock Origin's power button cannot reach: a Firefox enterprise policy that force-installs the extension, keeps uBlock's **My filters** synchronized with this repo, and blocks the URLs itself; a user stylesheet that carries the cosmetic rules; and AdGuard Home rules for the whole-domain blocks.
 
 Every layer is generated from this one filter list. See [`deploy/README.md`](deploy/README.md).
 
