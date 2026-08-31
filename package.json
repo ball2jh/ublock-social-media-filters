@@ -1,10 +1,10 @@
 {
   "name": "stuff",
   "version": "1.0.0",
-  "description": "Custom filter list for [uBlock Origin](https://ublockorigin.com/) that blocks distracting social media while preserving useful content on YouTube and Reddit.",
+  "description": "Custom uBlock Origin filter list that blocks distracting social media while preserving deliberate navigation on YouTube, Reddit, X/Twitter, Twitch, and Kick.",
   "main": "validate-filters.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node validate-filters.js && node deploy/test-policy.js && python3 deploy/test-merge-adguard-rules.py"
   },
   "repository": {
     "type": "git",

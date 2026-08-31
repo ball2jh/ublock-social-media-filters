@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Generate WebsiteFilter.Block in firefox-policies.json from the filter list.
+// Generate WebsiteFilter.Block and uBO's managed My filters from the sources.
 //
 // Firefox enforces these itself, below the extension layer, so uBO's power
 // button cannot reach them -- and unlike the DNS layer, they survive a VPN.
@@ -18,10 +18,20 @@ const DOMAIN = /^\|\|([\w.-]+)\^$/;
 const ROUTE = /^\|\|([\w.-]+)(\/[^$]*)\$document$/;
 const EXACT = /^\|https?:\/\/([\w.-]+)(\/[^|]*)\|\$document$/;
 
+// Older releases fully blocked Twitch in both My filters and the subscribed
+// public list. These directives disable those exact stale filters wherever
+// uBO finds them, without changing the user's other selected filter lists.
+const RETIRED_FILTER_MIGRATIONS = [
+  '||twitch.tv^$badfilter',
+  '||twitchcdn.net^$badfilter',
+  '||jtvnw.net^$badfilter',
+];
+
 const patterns = [];
 const unhandled = [];
+const rules = readRules();
 
-for (const raw of readRules()) {
+for (const raw of rules) {
   const line = raw.trim();
   if (!line || line.startsWith('!') || line.includes('##')) continue;
 
@@ -42,6 +52,13 @@ if (block.length > 1000) throw new Error(`${block.length} patterns exceeds Firef
 
 const policy = JSON.parse(fs.readFileSync(BASE, 'utf8'));
 policy.policies.WebsiteFilter = { Block: block, Exceptions: [] };
+
+const managed = policy.policies['3rdparty'].Extensions['uBlock0@raymondhill.net'];
+managed.toOverwrite.filters = [
+  ...new Set(rules.map((raw) => raw.trim()).filter(Boolean)),
+  ...RETIRED_FILTER_MIGRATIONS,
+];
+
 fs.writeFileSync(POLICY, JSON.stringify(policy, null, 2) + '\n');
 
 console.log(`${block.length} block patterns -> ${POLICY}`);

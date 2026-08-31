@@ -65,5 +65,6 @@ fi
 
 (( LOCK )) && echo "immutable bits set (undo: sudo ./deploy/uninstall.sh)"
 echo
-echo "restart Firefox, then confirm at about:policies and about:addons"
+echo "restart Firefox to apply the policy and replace uBlock Origin's My filters"
+echo "then confirm at about:policies and about:addons"
 echo "for the DNS layer: sudo ./deploy/install-adguard.sh"
